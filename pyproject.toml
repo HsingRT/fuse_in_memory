@@ -1,8 +1,7 @@
 [tool.poetry]
-name = "in_memory_fs"
+name = "fuse_in_memory"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+description = "An in-memory encrypted file system using FUSE and AES-256-CFB"
 
 [tool.poetry.dependencies]
 python = "^3.10"
