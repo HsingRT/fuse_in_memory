@@ -12,6 +12,9 @@ poetry.lock
 # VS Code settings 
 .vscode/
 
+# Mac File
+.DS_Store
+
 # Unit test / coverage results
 htmlcov/
 .tox/
