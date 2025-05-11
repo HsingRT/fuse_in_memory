@@ -41,13 +41,13 @@ Example:
 
 ```bash
 mkdir /tmp/memfs
-sudo python in_memory_fs.py /tmp/memfs
+sudo python fuse_in_memory.py /tmp/memfs
 ```
 
 ### Test Flow Example (in Python)
 
 ```python
-from in_memory_fs import InMemoryFileSystem
+from fuse_in_memory import InMemoryFileSystem
 
 fs = InMemoryFileSystem()
 fs.create('/secret.txt', 0o644)
