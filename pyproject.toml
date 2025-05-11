@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "in_memory_fs"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fusepy = "^3.0.1"
+cryptography = "^42.0.8"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

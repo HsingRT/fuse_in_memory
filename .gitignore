@@ -1,0 +1,41 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Poetry virtualenv
+.venv/
+
+# Poetry files
+poetry.lock
+
+# VS Code settings 
+.vscode/
+
+# Unit test / coverage results
+htmlcov/
+.tox/
+.nox/
+.coverage
+coverage.xml
+*.cover
+.cache
+.pytest_cache/
+nosetests.xml
+test-results.xml
+fuse_in_memory_and_test.py
+
+# mypy / pylint / pyright / pyre 
+.mypy_cache/
+.dmypy.json
+.pyre/
+
+# Local mountpoints or folders
+/mountpoint/
+
+# Editor-specific files
+*.swp
+*.swo
+*.bak
+*.tmp
+*~
