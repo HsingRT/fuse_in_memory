@@ -1,16 +1,19 @@
 import os
 import sys
 import errno
+from fuse import FUSE, FuseOSError, Operations
 from fuse_in_memory import InMemoryFileSystem
 import secrets
 import base64
 import threading
 import time
 
+
 def generate_random_key():
     key = os.urandom(32)
     encoded_key = base64.b64encode(key).decode('utf-8')
     return key, encoded_key
+
 
 def list_directory_contents(path):
     try:
@@ -18,6 +21,7 @@ def list_directory_contents(path):
         print(f"Contents of {path}: {contents}")
     except Exception as e:
         print(f"Error listing contents of {path}: {e}")
+
 
 def test_encryption_decryption(fs, mountpoint):
     key, encoded_key = generate_random_key()
@@ -32,9 +36,9 @@ def test_encryption_decryption(fs, mountpoint):
         print(f"Error: {e}")
 
     fs.write("/testfile", b"Hello, world!", 0, None)
-    
+
     list_directory_contents(mountpoint)
-    
+
     encrypted_data = fs.data["/testfile"]
     print(f"Encrypted data: {encrypted_data}")
 
@@ -52,6 +56,7 @@ def test_encryption_decryption(fs, mountpoint):
         print(f"File not found as expected: {e}")
 
     list_directory_contents(mountpoint)
+
 
 def test_key_validation(fs, mountpoint):
     key1, encoded_key1 = generate_random_key()
@@ -73,9 +78,9 @@ def test_key_validation(fs, mountpoint):
 
     fs.write("/file1", b"Data for file1", 0, None)
     fs.write("/file2", b"Data for file2", 0, None)
-    
+
     list_directory_contents(mountpoint)
-    
+
     encrypted_data1 = fs.data["/file1"]
     encrypted_data2 = fs.data["/file2"]
     print(f"Encrypted data for /file1: {encrypted_data1}")
@@ -106,34 +111,60 @@ def test_key_validation(fs, mountpoint):
 
     list_directory_contents(mountpoint)
 
+
 def test_directory_creation_deletion(fs, mountpoint):
-    # 創建目錄
+    # Create a directory
     print("Creating directory /testdir...")
     fs.mkdir("/testdir", 0o755)
     list_directory_contents(mountpoint)
-    
-    # 確認目錄已創建
+
+    # Confirm that the directory was created
     try:
         attrs = fs.getattr("/testdir")
         print(f"Attributes of /testdir: {attrs}")
     except FuseOSError as e:
         print(f"Error: {e}")
 
-    # 刪除目錄
+    # Remove the directory
     print("Removing directory /testdir...")
     fs.rmdir("/testdir")
     list_directory_contents(mountpoint)
-    
-    # 確認目錄已刪除
+
+    # Confirm that the directory was removed
     try:
         attrs = fs.getattr("/testdir")
         print(f"Attributes of /testdir: {attrs}")
     except FuseOSError as e:
         print(f"Directory not found as expected: {e}")
 
+
+def benchmark_io_performance(fs, mountpoint):
+    print("Benchmarking I/O performance...")
+
+    key, _ = generate_random_key()
+    fs.set_key("/benchfile", key)
+    fs.create("/benchfile", 0o644)
+    fs.open("/benchfile", os.O_RDWR)
+
+    data_size = 1024 * 100  # 100KB
+    data = b"A" * data_size
+
+    start = time.time()
+    fs.write("/benchfile", data, 0, None)
+    write_elapsed = time.time() - start
+    print(f"Write {data_size / 1024:.0f}KB took {write_elapsed:.4f} seconds")
+
+    start = time.time()
+    fs.read("/benchfile", data_size, 0, None)
+    read_elapsed = time.time() - start
+    print(f"Read {data_size / 1024:.0f}KB took {read_elapsed:.4f} seconds")
+
+    fs.unlink("/benchfile")
+
+
 def main(mountpoint):
     fs = InMemoryFileSystem()
-    
+
     def mount_fs():
         print(f"Mounting filesystem at {mountpoint}")
         print("\n" + "="*50 + "\n")
@@ -150,7 +181,7 @@ def main(mountpoint):
     test_encryption_decryption(fs, mountpoint)
 
     print("\n" + "="*50 + "\n")
-    
+
     print("Testing key validation functionality...")
     test_key_validation(fs, mountpoint)
 
@@ -159,10 +190,14 @@ def main(mountpoint):
     print("Testing directory creation and deletion functionality...")
     test_directory_creation_deletion(fs, mountpoint)
 
+    print("Benchmarking I/O performance...")
+    benchmark_io_performance(fs, mountpoint)
+
     # Unmount the filesystem
     os.system(f"fusermount -u {mountpoint}")
     print("Filesystem unmounted successfully.")
-    
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print("usage: %s <mountpoint>" % sys.argv[0])
