@@ -56,6 +56,22 @@ fs.write('/secret.txt', b'hello world', 0, None)
 print(fs.read('/secret.txt', 11, 0, None))  # Output: b'hello world'
 ```
 
+## Running Tests and Benchmark
+
+You can run the built-in test and performance benchmark using the provided test script:
+
+```bash
+mkdir /tmp/memfs
+sudo python3 fuse_in_memory_test.py /tmp/memfs
+```
+
+This script will:
+
+* Automatically mount the in-memory file system
+* Run encryption/decryption, access control, and directory operation tests
+* Benchmark read/write performance (e.g., 100KB I/O latency)
+* Automatically unmount the file system after testing
+
 ## Notes
 
 * The encryption key must be **32 bytes (256 bits)**; otherwise, an exception will be raised.
