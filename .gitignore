@@ -42,3 +42,7 @@ fuse_in_memory_and_test.py
 *.bak
 *.tmp
 *~
+
+# Pytest File
+.pytest_cache
+.coverage
