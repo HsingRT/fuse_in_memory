@@ -58,6 +58,27 @@ def test_encryption_decryption(fs, mountpoint):
     list_directory_contents(mountpoint)
 
 
+def test_plain_read_write(fs, mountpoint):
+    key, encoded_key = generate_random_key()
+    print(f"Key (not used for encryption): {encoded_key}")
+
+    fs.set_key("/plainfile", key)
+    fs.create("/plainfile", 0o644)
+    fs.open("/plainfile", os.O_RDWR)
+
+    fs.write("/plainfile", b"Plaintext only!", 0, None)
+    list_directory_contents(mountpoint)
+
+    data = fs.read("/plainfile", 15, 0, None)
+    print(f"Read data: {data}")
+
+    fs.unlink("/plainfile")
+    try:
+        fs.getattr("/plainfile")
+    except FuseOSError as e:
+        print(f"File not found as expected: {e}")
+
+
 def test_key_validation(fs, mountpoint):
     key1, encoded_key1 = generate_random_key()
     key2, encoded_key2 = generate_random_key()
@@ -138,26 +159,27 @@ def test_directory_creation_deletion(fs, mountpoint):
         print(f"Directory not found as expected: {e}")
 
 
-def benchmark_io_performance(fs, mountpoint):
-    print("Benchmarking I/O performance...")
+def benchmark_io_performance(fs, mountpoint, encryption_enabled):
+    print(
+        f"Benchmarking I/O performance (encryption_enabled={encryption_enabled})...")
 
     key, _ = generate_random_key()
     fs.set_key("/benchfile", key)
     fs.create("/benchfile", 0o644)
     fs.open("/benchfile", os.O_RDWR)
 
-    data_size = 1024 * 100  # 100KB
+    data_size = 1024 * 100
     data = b"A" * data_size
 
-    start = time.time()
+    start = time.perf_counter()
     fs.write("/benchfile", data, 0, None)
-    write_elapsed = time.time() - start
-    print(f"Write {data_size / 1024:.0f}KB took {write_elapsed:.4f} seconds")
+    write_elapsed = time.perf_counter() - start
+    print(f"Write {data_size / 1024:.0f}KB took {write_elapsed:.6f} seconds")
 
-    start = time.time()
+    start = time.perf_counter()
     fs.read("/benchfile", data_size, 0, None)
-    read_elapsed = time.time() - start
-    print(f"Read {data_size / 1024:.0f}KB took {read_elapsed:.4f} seconds")
+    read_elapsed = time.perf_counter() - start
+    print(f"Read {data_size / 1024:.0f}KB took {read_elapsed:.6f} seconds")
 
     fs.unlink("/benchfile")
 
@@ -182,6 +204,13 @@ def main(mountpoint):
 
     print("\n" + "="*50 + "\n")
 
+    fs.encryption_enabled = False
+    print(f"Testing read/write with encryption DISABLED...")
+    test_plain_read_write(fs, mountpoint)
+    fs.encryption_enabled = True
+
+    print("\n" + "="*50 + "\n")
+
     print("Testing key validation functionality...")
     test_key_validation(fs, mountpoint)
 
@@ -190,8 +219,16 @@ def main(mountpoint):
     print("Testing directory creation and deletion functionality...")
     test_directory_creation_deletion(fs, mountpoint)
 
-    print("Benchmarking I/O performance...")
-    benchmark_io_performance(fs, mountpoint)
+    print("\n" + "="*50 + "\n")
+
+    print(f"Benchmark with encryption ENABLED...")
+    benchmark_io_performance(fs, mountpoint, encryption_enabled=True)
+
+    print("\n" + "="*50 + "\n")
+
+    fs.encryption_enabled = False
+    print(f"Benchmark with encryption DISABLED...")
+    benchmark_io_performance(fs, mountpoint, encryption_enabled=False)
 
     # Unmount the filesystem
     os.system(f"fusermount -u {mountpoint}")

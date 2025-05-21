@@ -8,7 +8,7 @@ import secrets
 
 
 class InMemoryFileSystem(Operations):
-    def __init__(self):
+    def __init__(self, encryption_enabled=True):
         # Root directory metadata initialization
         self.files = {}
         self.data = {}
@@ -19,8 +19,11 @@ class InMemoryFileSystem(Operations):
             'st_size': 0
         }
         self.data['/'] = b''
+        self.encryption_enabled = encryption_enabled
 
     def encrypt(self, key, plaintext):
+        if not self.encryption_enabled:
+            return plaintext
         # Random IV ensures unique ciphertext for same plaintext
         iv = secrets.token_bytes(16)
         cipher = Cipher(algorithms.AES(key), modes.CFB(iv),
@@ -30,6 +33,8 @@ class InMemoryFileSystem(Operations):
         return iv + ct
 
     def decrypt(self, key, ciphertext):
+        if not self.encryption_enabled:
+            return ciphertext
         # Extract IV from ciphertext before decryption
         if len(ciphertext) == 0:
             return b''
@@ -127,8 +132,11 @@ class InMemoryFileSystem(Operations):
 
 def main(mountpoint):
     # Mount with single-threaded mode to simplify synchronization
+    encryption_enabled = os.environ.get("DISABLE_ENCRYPTION") != "1"
+    print(f"Encryption enabled: {encryption_enabled}")
     print(f"Mounting filesystem at {mountpoint}")
-    FUSE(InMemoryFileSystem(), mountpoint, nothreads=True, foreground=True)
+    FUSE(InMemoryFileSystem(encryption_enabled),
+         mountpoint, nothreads=True, foreground=True)
     print(f"Filesystem mounted successfully at {mountpoint}")
 
 
